@@ -1,0 +1,349 @@
+-- // НАСТРОЙКИ И СЕРВИСЫ
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+-- // ЦВЕТА (ХАКЕРСКИЙ СТИЛЬ)
+local colors = {
+    bg = Color3.fromRGB(10, 15, 10), -- Темно-зеленый фон
+    main = Color3.fromRGB(0, 255, 100), -- Яркий неон
+    btn = Color3.fromRGB(0, 60, 30), -- Кнопки
+    btnHover = Color3.fromRGB(0, 100, 50), -- Кнопки при наведении
+    text = Color3.fromRGB(200, 255, 220), -- Текст
+    stroke = Color3.fromRGB(0, 255, 100) -- Обводка
+}
+
+-- // ТОЧКИ ТЕЛЕПОРТАЦИИ
+local points = {
+    {200, -3, 29}, {283, -3, 19}, {397, -3, -1}, {542, -3, -17},
+    {755, -3, -21}, {1073, -3, -35}, {1554, -3, -39}, {2250, -3, -40},
+    {2959, -3, 26}, {3319, -3, -2}, {3673, -3, -29}, {4025, -3, -1},
+    {4315, 7, 14}
+}
+
+-- // СОЗДАНИЕ GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "HackerMenu"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Основная рамка
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 320, 0, 400) -- Компактный размер для мобильных
+mainFrame.Position = UDim2.new(0.5, -160, 0.5, -200)
+mainFrame.BackgroundColor3 = colors.bg
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+-- Закругление и тень
+local corner = Instance.new("UICorner", mainFrame)
+corner.CornerRadius = UDim.new(0, 12)
+
+local stroke = Instance.new("UIStroke", mainFrame)
+stroke.Color = colors.stroke
+stroke.Thickness = 2
+stroke.Transparency = 0.5
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Parent = mainFrame
+title.Size = UDim2.new(1, 0, 0, 40)
+title.Text = "MOD MENU"
+title.TextColor3 = colors.main
+title.TextScaled = true
+title.Font = Enum.Font.Code
+title.BackgroundTransparency = 1
+title.TextStrokeTransparency = 0 -- Эффект свечения текста
+
+-- Координаты
+local coordsLabel = Instance.new("TextLabel")
+coordsLabel.Parent = mainFrame
+coordsLabel.Size = UDim2.new(1, -20, 0, 20)
+coordsLabel.Position = UDim2.new(0, 10, 0, 40)
+coordsLabel.Text = "X: 0 Y: 0 Z: 0"
+coordsLabel.TextColor3 = colors.text
+coordsLabel.TextSize = 12
+coordsLabel.Font = Enum.Font.Code
+coordsLabel.BackgroundTransparency = 1
+coordsLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Контейнер для кнопок (Скролл)
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Parent = mainFrame
+scrollFrame.Size = UDim2.new(1, -20, 1, -80)
+scrollFrame.Position = UDim2.new(0, 10, 0, 70)
+scrollFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+scrollFrame.BackgroundTransparency = 0.8
+scrollFrame.BorderSizePixel = 0
+scrollFrame.ScrollBarThickness = 4
+scrollFrame.ScrollBarImageColor3 = colors.main
+scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+
+local layout = Instance.new("UIListLayout", scrollFrame)
+layout.Padding = UDim.new(0, 5)
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local padding = Instance.new("UIPadding", scrollFrame)
+padding.PaddingLeft = UDim.new(0, 5)
+padding.PaddingRight = UDim.new(0, 5)
+
+-- ФУНКЦИИ
+
+-- Телепортация
+local function teleport(x, y, z)
+    local char = player.Character    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+    end
+end
+
+-- Пранки (Функции для других игроков)
+local function getTarget(name)
+    local target = Players:FindFirstChild(name)
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        return target.Character
+    end
+    return nil
+end
+
+local function prankLift(name)
+    local char = getTarget(name)
+    if char then
+        local root = char.HumanoidRootPart
+        root.CFrame = root.CFrame * CFrame.new(0, 50, 0)
+    end
+end
+
+local function prankDrop(name)
+    local char = getTarget(name)
+    if char then
+        local root = char.HumanoidRootPart
+        root.CFrame = root.CFrame * CFrame.new(0, -50, 0)
+    end
+end
+
+local function prankThrow(name)
+    local char = getTarget(name)
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.Velocity = Vector3.new(0, 100, 0)
+    end
+end
+
+local function prankKill(name)
+    local char = getTarget(name)
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.Health = 0
+    end
+end
+
+-- СОЗДАНИЕ КНОПОК (Вспомогательная функция)
+local function createButton(parent, text, callback, colorOverride)
+    local btn = Instance.new("TextButton")
+    btn.Parent = parent
+    btn.Size = UDim2.new(1, 0, 0, 35)
+    btn.BackgroundColor3 = colorOverride or colors.btn    btn.TextColor3 = colors.main
+    btn.Text = text
+    btn.Font = Enum.Font.Code
+    btn.TextSize = 14
+    btn.AutoButtonColor = false
+    
+    local btnCorner = Instance.new("UICorner", btn)
+    btnCorner.CornerRadius = UDim.new(0, 6)
+    
+    local btnStroke = Instance.new("UIStroke", btn)
+    btnStroke.Color = colors.stroke
+    btnStroke.Thickness = 1
+    btnStroke.Transparency = 0.6
+
+    -- Анимация нажатия
+    btn.MouseButton1Click:Connect(function()
+        local tween = TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = colors.main, TextColor3 = colors.bg})
+        tween:Play()
+        tween.Completed:Wait()
+        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = colorOverride or colors.btn, TextColor3 = colors.main}):Play()
+        if callback then callback() end
+    end)
+    
+    -- Ховер эффект
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = colors.btnHover}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = colorOverride or colors.btn}):Play()
+    end)
+
+    return btn
+end
+
+-- 1. СЕКЦИЯ ТЕЛЕПОРТАЦИИ (Сетка)
+local tpFrame = Instance.new("Frame")
+tpFrame.Parent = scrollFrame
+tpFrame.Size = UDim2.new(1, 0, 0, 140) -- Высота под сетку
+tpFrame.BackgroundTransparency = 1
+
+local gridLayout = Instance.new("UIGridLayout", tpFrame)
+gridLayout.CellSize = UDim2.new(0, 60, 0, 35)
+gridLayout.CellPadding = UDim2.new(0, 5, 0, 5)
+gridLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Кнопки 1-13
+for i, point in ipairs(points) do
+    local btn = createButton(tpFrame, tostring(i), function()
+        teleport(point[1], point[2], point[3])
+    end)    btn.LayoutOrder = i
+end
+
+-- 2. СЕКЦИЯ ИГРОКОВ
+local playerSection = Instance.new("Frame")
+playerSection.Parent = scrollFrame
+playerSection.Size = UDim2.new(1, 0, 0, 80)
+playerSection.BackgroundTransparency = 1
+Instance.new("UIListLayout", playerSection).Padding = UDim.new(0, 5)
+
+local pTitle = Instance.new("TextLabel")
+pTitle.Parent = playerSection
+pTitle.Size = UDim2.new(1, 0, 0, 20)
+pTitle.Text = "--- TELEPORT TO PLAYER ---"
+pTitle.TextColor3 = colors.text
+pTitle.TextSize = 10
+pTitle.BackgroundTransparency = 1
+pTitle.Font = Enum.Font.Code
+
+createButton(playerSection, "TP to vika322_Vika", function()
+    teleportToPlayer("vika322_Vika")
+end)
+
+createButton(playerSection, "TP to kas64fegvsfe1234", function()
+    teleportToPlayer("kas64fegvsfe1234")
+end)
+
+-- 3. СЕКЦИЯ ПРАНКИ
+local prankSection = Instance.new("Frame")
+prankSection.Parent = scrollFrame
+prankSection.Size = UDim2.new(1, 0, 0, 150)
+prankSection.BackgroundTransparency = 1
+Instance.new("UIListLayout", prankSection).Padding = UDim.new(0, 5)
+
+local prankTitle = Instance.new("TextLabel")
+prankTitle.Parent = prankSection
+prankTitle.Size = UDim2.new(1, 0, 0, 20)
+prankTitle.Text = "--- PRANKS (Target: vika322_Vika) ---"
+prankTitle.TextColor3 = Color3.fromRGB(255, 100, 100) -- Красный заголовок
+prankTitle.TextSize = 10
+prankTitle.BackgroundTransparency = 1
+prankTitle.Font = Enum.Font.Code
+
+-- Пранки на конкретного игрока (можно поменять имя в функциях выше)
+createButton(prankSection, "⬆ Поднять игрока", function() prankLift("vika322_Vika") end)
+createButton(prankSection, "⬇ Опустить игрока", function() prankDrop("vika322_Vika") end)
+createButton(prankSection, "🚀 Выкинуть (Подбросить)", function() prankThrow("vika322_Vika") end)
+createButton(prankSection, "💀 УБИТЬ (Респаун)", function() prankKill("vika322_Vika") end)
+
+-- 4. СЕКЦИЯ ЧИТЫ (Вкл/Выкл)
+local cheatSection = Instance.new("Frame")
+cheatSection.Parent = scrollFrame
+cheatSection.Size = UDim2.new(1, 0, 0, 80)
+cheatSection.BackgroundTransparency = 1
+Instance.new("UIListLayout", cheatSection).Padding = UDim.new(0, 5)
+
+local cheatTitle = Instance.new("TextLabel")
+cheatTitle.Parent = cheatSection
+cheatTitle.Size = UDim2.new(1, 0, 0, 20)
+cheatTitle.Text = "--- HACKS ---"
+cheatTitle.TextColor3 = colors.main
+cheatTitle.TextSize = 10
+cheatTitle.BackgroundTransparency = 1
+cheatTitle.Font = Enum.Font.Code
+
+-- Бессмертие
+local godMode = false
+local godBtn = createButton(cheatSection, "🛡 Бессмертие [OFF]", function()
+    godMode = not godMode
+    godBtn.Text = godMode and "🛡 Бессмертие [ON]" or "🛡 Бессмертие [OFF]"
+    godBtn.BackgroundColor3 = godMode and colors.main or colors.btn
+    godBtn.TextColor3 = godMode and colors.bg or colors.main
+end)
+
+-- Ходьба через стены (Noclip + Прозрачность)
+local wallHack = false
+local wallBtn = createButton(cheatSection, "👻 Ходить через стены [OFF]", function()
+    wallHack = not wallHack
+    wallBtn.Text = wallHack and "👻 Ходить через стены [ON]" or "👻 Ходить через стены [OFF]"
+    wallBtn.BackgroundColor3 = wallHack and colors.main or colors.btn
+    wallBtn.TextColor3 = wallHack and colors.bg or colors.main
+end)
+
+-- Логика читов
+game:GetService("RunService").Stepped:Connect(function()
+    if godMode and player.Character and player.Character:FindFirstChild("Humanoid") then
+        player.Character.Humanoid.Health = player.Character.Humanoid.MaxHealth
+    end
+
+    if wallHack and player.Character then
+        for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+                part.Transparency = 0.5
+            end
+        end
+    elseif player.Character then
+         for _, part in pairs(player.Character:GetDescendants()) do
+            if part:IsA("BasePart") then                part.CanCollide = true
+                part.Transparency = 0
+            end
+        end
+    end
+end)
+
+-- Функция ТП к игроку (глобальная для кнопок выше)
+function teleportToPlayer(name)
+    local target = Players:FindFirstChild(name)
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        teleport(
+            target.Character.HumanoidRootPart.Position.X,
+            target.Character.HumanoidRootPart.Position.Y + 2,
+            target.Character.HumanoidRootPart.Position.Z
+        )
+    else
+        -- Визуальное уведомление об ошибке (можно добавить Label)
+        print("Игрок не найден: " .. name)
+    end
+end
+
+-- Кнопка закрытия/сворачивания
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent = mainFrame
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(50, 0, 0)
+closeBtn.Text = "X"
+closeBtn.TextColor3 = Color3.fromRGB(255, 50, 50)
+closeBtn.Font = Enum.Font.Code
+closeBtn.TextScaled = true
+Instance.new("UICorner", closeBtn)
+
+local isMinimized = false
+closeBtn.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    if isMinimized then
+        scrollFrame.Visible = false
+        mainFrame.Size = UDim2.new(0, 320, 0, 60) -- Только заголовок
+        closeBtn.Text = "▼"
+    else
+        scrollFrame.Visible = true
+        mainFrame.Size = UDim2.new(0, 320, 0, 400)
+        closeBtn.Text = "X"
+    end
+end)
+
+-- Обновление координат
+while true do    wait(0.1)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        local pos = player.Character.HumanoidRootPart.Position
+        coordsLabel.Text = string.format("X: %.1f  Y: %.1f  Z: %.1f", pos.X, pos.Y, pos.Z)
+    end
+end
